@@ -1,4 +1,4 @@
-export class Subscriptions {
+class Subscriptions {
   constructor() {
     this.data = [];
   }
@@ -7,7 +7,7 @@ export class Subscriptions {
     this.data.push(newUser);
   }
 
-  checkUser(user) {
+  existUser(user) {
     const value = this.data.find(item => item === user);
     if (value) {
       return true;
@@ -25,4 +25,8 @@ export class Subscriptions {
       return false;
     }
   }
+}
+
+module.exports = {
+  Subscriptions,
 }

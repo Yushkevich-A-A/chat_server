@@ -1,7 +1,7 @@
 const http = require('http');
 const Koa = require('koa');
 const koaBody = require('koa-body');
-const  router = require('koa-router');
+const  Router = require('koa-router');
 const json = require('koa-json');
 const WS = require('ws');
 const router = new Router();
@@ -17,14 +17,13 @@ app.use( koaBody({
 
 app.use(json());
 
-app.use( async (ctx) => {
+app.use( async (ctx, next) => {
   const origin = ctx.request.get('Origin');
-  if(!origin) {
-    console.log('!origin');
+  if (!origin) {
     return await next();
   }
 
-  const headers = { 'Access-Controll-Allow-Origin': '*' };
+  const headers = { 'Access-Control-Allow-Origin': '*' };
 
   if (ctx.request.method !== 'OPTIONS') {
     console.log('! OPTIONS');
@@ -57,13 +56,25 @@ const wsServer = new WS.Server({
   server
 });
 
-
 router.post('/', async (ctx) => {
-  console.log(ctx.request.body);
-  ctx.response.body = 'hello';
+  const { nickname } = ctx.request.body;
+  if(db.existUser(nickname)) {
+    ctx.response.body = { status: false };
+    return;
+  }
+  // db.add(nickname);
+  // chat.length = 0;
+  console.log(chat)
+  // console.log(nickname)
+  ctx.response.body = {
+     status: true,
+     users: db.data,
+     chat: chat,
+    };
+
 })
 
-const chat = [];
+app.use(router.routes()).use(router.allowedMethods());
 
 wsServer.on('connection', (ws) => {
   ws.on('message', (e) => {
