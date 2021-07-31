@@ -7,23 +7,32 @@ class Subscriptions {
     this.data.push(newUser);
   }
 
+  update(id, nickname) {
+    const item = this.data.find(item => item.id === id);
+    item.nickname = nickname;
+  }
+
   existUser(user) {
-    const value = this.data.find(item => item === user);
-    if (value) {
+    const itemIndex = this.data.find(item => item.nickname === user);
+    if (itemIndex) {
       return true;
     } else {
       return false;
     }
   }
 
-  delete(user) {
-    const value = this.data.findIndex(item => item === user);
-    if(value !== -1){
-      this.data.splice(value, 1);
+  delete(id) {
+    const itemIndex = this.data.findIndex(item => item.id === id);
+    if(itemIndex !== -1){
+      this.data.splice(itemIndex, 1);
       return true;
     } else {
       return false;
     }
+  }
+
+  getAllUsers() {
+    return this.data.map(item => item.nickname);
   }
 }
 

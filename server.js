@@ -45,7 +45,6 @@ app.use( async (ctx, next) => {
     if (ctx.request.get('Access-Control-Request-Headers')) {
       ctx.response.set('Access-Control-Allow-Headers', ctx.request.get('Access-Control-Request-Headers'));
     }
-
     ctx.response.status = 204;
   }
 })
@@ -62,29 +61,53 @@ router.post('/', async (ctx) => {
     ctx.response.body = { status: false };
     return;
   }
-  // db.add(nickname);
-  // chat.length = 0;
-  console.log(chat)
-  // console.log(nickname)
-  ctx.response.body = {
-     status: true,
-     users: db.data,
-     chat: chat,
-    };
-
+  ctx.response.body = { status: true };
 })
 
 app.use(router.routes()).use(router.allowedMethods());
 
 wsServer.on('connection', (ws) => {
-  ws.on('message', (e) => {
-    console.log(e);
+  ws.id = +new Date();
+  db.add({id: ws.id})
+  ws.on('message', (msg) => {
+    const message = JSON.parse(msg);
+    if (message.status === 'init') {
+      db.update(ws.id, message.nickname);
+
+      ws.send(JSON.stringify({
+        status: 'init',
+        chat: chat,
+      }));
+
+      Array.from(wsServer.clients)
+      .filter(client => client.readyState === WS.OPEN)
+      .forEach(client => client.send(JSON.stringify({
+        status: 'uploadParticipant',
+        users: db.getAllUsers(),
+      })));
+      return;
+    }
+
+    if (message.status === 'message') {
+      chat.push(message.message);
+      Array.from(wsServer.clients)
+      .filter(client => client.readyState === WS.OPEN)
+      .forEach(client => client.send(JSON.stringify({
+        status: 'message',
+        data: message.message,
+      })));
+    }
+  });
+
+  ws.on('close', () => {
+    db.delete(ws.id);
     Array.from(wsServer.clients)
     .filter(client => client.readyState === WS.OPEN)
-    .forEach(client => client.send(JSON.stringify({ message: e })));
+    .forEach(client => client.send(JSON.stringify({
+      status: 'uploadParticipant',
+      users: db.getAllUsers(),
+    })));
   });
-  ws.send(JSON.stringify(chat));
-
 });
 
 server.listen(port);
